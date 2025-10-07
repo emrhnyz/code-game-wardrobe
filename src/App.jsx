@@ -243,59 +243,59 @@ export default function App() {
   }
 
   // GÜNCELLENDİ: Bu fonksiyon Cloudflare Worker ile konuşacak şekilde yeniden yazıldı.
-  async function aiTryOn() {
-    try {
-      setError("");
-      if (!personDataUrl) {
-        setError("Please upload a profile image.");
-        return;
-      }
-      setAiLoading(true);
+  // GÜNCELLENDİ: Bu fonksiyon Cloudflare Worker ile konuşacak şekilde yeniden yazıldı.
+  async function aiTryOn() {
+    try {
+      setError("");
+      if (!personDataUrl) {
+        setError("Please upload a profile image.");
+        return;
+      }
+      setAiLoading(true);
 
-      // 1) Kullanıcının yüklediği resmi (data URL) blob'a çevir.
-      const personBlob = await (await fetch(personDataUrl)).blob();
+      // 1) Kullanıcının yüklediği resmi (data URL) blob'a çevir.
+      const personBlob = await (await fetch(personDataUrl)).blob();
 
-      // 2) FormData oluştur ve SADECE kullanıcı resmini ekle.
-      // Worker'daki kod 'image' adında bir alan bekliyor.
-      const formData = new FormData();
-      formData.append('image', personBlob, 'user-image.png');
+      // 2) FormData oluştur ve SADECE kullanıcı resmini ekle.
+      // Worker'daki kod 'image' adında bir alan bekliyor.
+      const formData = new FormData();
+      formData.append('image', personBlob, 'user-image.png');
 
-      // 3) Cloudflare Worker'a isteği gönder.
-      // !!! DEĞİŞTİRİLECEK URL: Buraya kendi Cloudflare Worker'ının URL'sini yazmalısın.
-      const response = await fetch("https://your-worker-name.your-subdomain.workers.dev", {
-        method: "POST",
-        body: formData,
-      });
+      // 3) Cloudflare Worker'a isteği gönder.
+      // !!! DEĞİŞTİRİLECEK URL: Buraya kendi Cloudflare Worker'ının URL'sini yazmalısın.
+      const response = await fetch("https://your-worker-name.your-subdomain.workers.dev", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${response.status} - ${errorText}`);
-      }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
 
-      // 4) Worker'dan dönen JSON'ı işle.
-      // Worker'ımız { image: "data:image/png;base64,..." } formatında bir JSON döner.
-      const result = await response.json();
-      const aiGeneratedImageUrl = result.image;
+      // 4) Worker'dan dönen JSON'ı işle.
+      // Worker'ımız { image: "data:image/png;base64,..." } formatında bir JSON döner.
+      const result = await response.json();
+      const aiGeneratedImageUrl = result.image;
 
-      if (!aiGeneratedImageUrl) {
-        throw new Error("API'den geçerli bir resim alınamadı.");
-      }
+      if (!aiGeneratedImageUrl) {
+        throw new Error("API'den geçerli bir resim alınamadı.");
+      }
 
-      // 5) Ana sahnedeki resmi, yapay zekanın ürettiği resimle değiştir.
-      setPersonDataUrl(aiGeneratedImageUrl);
-      
-      // Manuel overlay'i temizle, çünkü AI giydirmesi yapıldı.
-      setSelectedHoodieUrl("");
-      resetOverlay();
+      // 5) Ana sahnedeki resmi, yapay zekanın ürettiği resimle değiştir.
+      setPersonDataUrl(aiGeneratedImageUrl);
+      
+      // Manuel overlay'i temizle, çünkü AI giydirmesi yapıldı.
+      setSelectedHoodieUrl("");
+      resetOverlay();
 
-    } catch (e) {
-      console.error(e);
-      setError("AI try-on başarısız: " + e.message);
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
+    } catch (e) {
+      console.error(e);
+      setError("AI try-on başarısız: " + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   // ---------- UI ----------
   return (
