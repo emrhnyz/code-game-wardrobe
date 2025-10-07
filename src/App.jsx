@@ -288,11 +288,13 @@ export default function App() {
       setAiResultUrl("");
 
     } catch (e) {
-      console.error(e);
-      setError("AI try-on failed: " + e.message);
+      console.error(e); // developer console'da detay kalsın
+      setError("AI service is temporarily unavailable. Please try again later.");
+      setTimeout(() => setError(""), 4000); // 4 saniye sonra otomatik kaybolsun
     } finally {
       setAiLoading(false);
     }
+
   }
 
   // ---------- UI ----------
