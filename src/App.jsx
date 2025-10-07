@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import CodeRain from "./components/CodeRain";
+import hoodie1 from "./assets/hoodies/hoodie1.png";
+import hoodie2 from "./assets/hoodies/hoodie2.png";
+import hoodie3 from "./assets/hoodies/hoodie3.png";
+import hoodieAI from "./assets/hoodies/hoodieai.png";
+import codeGameOverlay from "./assets/hoodies/foto.png";
 
 // --- SINGLE FILE REACT APP (Manual + AI) ---
 // Stage is a strict 1:1 square (PP area). Person image is clipped inside it (no overflow).
@@ -9,11 +14,11 @@ import CodeRain from "./components/CodeRain";
 // Drag clamp: (current version allows free move; clamp function is available if needed)
 
 const HOODIES = [
-  { id: "hoodie1", label: "HAT #1", src: "/hoodies/hoodie1.png" },
-  { id: "hoodie2", label: "HAT #2", src: "/hoodies/hoodie2.png" },
-  { id: "hoodie3", label: "HAT #3", src: "/hoodies/hoodie3.png" },
+  { id: "hoodie1", label: "Hoodie #1", src: hoodie1 },
+  { id: "hoodie2", label: "Hoodie #2", src: hoodie2 },
+  { id: "hoodie3", label: "Hoodie #3", src: hoodie3 },
 ];
-const CODEGAME_OVERLAY_SRC = "/hoodies/foto.png";
+const CODEGAME_OVERLAY_SRC = codeGameOverlay;
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
@@ -246,7 +251,7 @@ export default function App() {
       const personBlob = await (await fetch(personDataUrl)).blob();
 
       // 2) Fixed hoodie image (public/hoodies/hoodieai.png)
-      const hoodieResp = await fetch("/hoodies/hoodieai.png");
+      const hoodieResp = await fetch(hoodieAI);
       if (!hoodieResp.ok) throw new Error("hoodieai.png not found");
       const hoodieBlob = await hoodieResp.blob();
 
