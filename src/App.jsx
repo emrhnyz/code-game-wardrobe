@@ -263,7 +263,7 @@ export default function App() {
 
       // 3) Cloudflare Worker'a isteği gönder.
       // !!! DEĞİŞTİRİLECEK URL: Buraya kendi Cloudflare Worker'ının URL'sini yazmalısın.
-      const response = await fetch("wispy-firefly-fdbd.emrhn-yildiz25.workers.dev", {
+      const response = await fetch("https://wispy-firefly-fdbd.emrhn-yildiz25.workers.dev", {
         method: "POST",
         body: formData,
       });
