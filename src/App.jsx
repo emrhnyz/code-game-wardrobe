@@ -22,6 +22,26 @@ const CODEGAME_OVERLAY_SRC = codeGameOverlay;
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
+// AVIF/HEIC/HEIF dosyaları PNG'e çevir
+async function convertIfNeeded(file, target = "image/png") {
+  if (!file || !file.type) return file;
+  const unsupported = /image\/(avif|heic|heif)/i.test(file.type);
+  if (!unsupported) return file;
+
+  // Canvas ile dönüştür
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bitmap, 0, 0);
+
+  const blob = await new Promise((res) => canvas.toBlob(res, target, 0.95));
+  // dosya ismini .png ile bitirelim
+  return new File([blob], (file.name || "image") + (target === "image/png" ? ".png" : ".jpg"), { type: target });
+}
+
+
 function fileToDataURL(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -72,10 +92,16 @@ export default function App() {
   async function onPickPerson(e) {
     const f = e.target.files?.[0];
     if (!f) return;
-    const url = await fileToDataURL(f);
+
+    // AVIF/HEIC ise PNG'e çevir
+    const f2 = await convertIfNeeded(f, "image/png");
+
+    // PNG/JPEG/WebP ise direkt kullan
+    const url = await fileToDataURL(f2);
     setPersonDataUrl(url);
     setAiResultUrl("");
   }
+
 
   // =============== DRAG / HANDLE LOGIC ===============
   function getCursor(e) {
