@@ -3,7 +3,8 @@ import CodeRain from "./components/CodeRain";
 import hoodie1 from "./assets/hoodies/hoodie1.png";
 import hoodie2 from "./assets/hoodies/hoodie2.png";
 import hoodie3 from "./assets/hoodies/hoodie3.png";
-import hoodieAI from "./assets/hoodies/hoodieai.png";
+// aiTryOn fonksiyonu hoodieAI dosyasını artık frontend'den göndermeyeceği için bu import'a gerek kalmadı.
+// import hoodieAI from "./assets/hoodies/hoodieai.png";
 import codeGameOverlay from "./assets/hoodies/foto.png";
 
 // --- SINGLE FILE REACT APP (Manual + AI) ---
@@ -14,447 +15,445 @@ import codeGameOverlay from "./assets/hoodies/foto.png";
 // Drag clamp: (current version allows free move; clamp function is available if needed)
 
 const HOODIES = [
-  { id: "hoodie1", label: "Hat #1", src: hoodie1 },
-  { id: "hoodie2", label: "Hat #2", src: hoodie2 },
-  { id: "hoodie3", label: "Hat #3", src: hoodie3 },
+  { id: "hoodie1", label: "Hat #1", src: hoodie1 },
+  { id: "hoodie2", label: "Hat #2", src: hoodie2 },
+  { id: "hoodie3", label: "Hat #3", src: hoodie3 },
 ];
 const CODEGAME_OVERLAY_SRC = codeGameOverlay;
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
 function fileToDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
 }
 
 function useImage(src) {
-  const [img, setImg] = useState(null);
-  useEffect(() => {
-    if (!src) return setImg(null);
-    const i = new Image();
-    i.crossOrigin = "anonymous";
-    i.onload = () => setImg(i);
-    i.onerror = () => setImg(null);
-    i.src = src;
-  }, [src]);
-  return img;
+  const [img, setImg] = useState(null);
+  useEffect(() => {
+    if (!src) return setImg(null);
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => setImg(i);
+    i.onerror = () => setImg(null);
+    i.src = src;
+  }, [src]);
+  return img;
 }
 
 export default function App() {
-  const [personDataUrl, setPersonDataUrl] = useState("");
-  const [selectedHoodieUrl, setSelectedHoodieUrl] = useState(HOODIES[0]?.src || "");
-  const [useCodeGameOverlay, setUseCodeGameOverlay] = useState(false);
+  const [personDataUrl, setPersonDataUrl] = useState("");
+  const [selectedHoodieUrl, setSelectedHoodieUrl] = useState(HOODIES[0]?.src || "");
+  const [useCodeGameOverlay, setUseCodeGameOverlay] = useState(false);
 
-  // Transform state
-  const [pos, setPos] = useState({ x: 360, y: 360 }); // centered in 720x720 by default
-  const [scale, setScale] = useState(0.8);
-  const [rotation, setRotation] = useState(0); // deg
-  const [mirror, setMirror] = useState(false);
+  // Transform state
+  const [pos, setPos] = useState({ x: 360, y: 360 }); // centered in 720x720 by default
+  const [scale, setScale] = useState(0.8);
+  const [rotation, setRotation] = useState(0); // deg
+  const [mirror, setMirror] = useState(false);
 
-  const [dragging, setDragging] = useState(false);
-  const [dragMode, setDragMode] = useState("move"); // move | scale | rotate
-  const dragState = useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, startScale: 1, startRot: 0, center: { x:0, y:0 } });
+  const [dragging, setDragging] = useState(false);
+  const [dragMode, setDragMode] = useState("move"); // move | scale | rotate
+  const dragState = useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, startScale: 1, startRot: 0, center: { x:0, y:0 } });
 
-  const personImg = useImage(personDataUrl);
-  const hoodieImg = useImage(selectedHoodieUrl);
-  const overlayImg = useImage(useCodeGameOverlay ? CODEGAME_OVERLAY_SRC : "");
+  const personImg = useImage(personDataUrl);
+  const hoodieImg = useImage(selectedHoodieUrl);
+  const overlayImg = useImage(useCodeGameOverlay ? CODEGAME_OVERLAY_SRC : "");
 
-  const stageRef = useRef(null);
+  const stageRef = useRef(null);
 
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResultUrl, setAiResultUrl] = useState("");
-  const [error, setError] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResultUrl, setAiResultUrl] = useState(""); // Bu state artık pek kullanılmıyor ama kalsın
+  const [error, setError] = useState("");
 
-  async function onPickPerson(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const url = await fileToDataURL(f);
-    setPersonDataUrl(url);
-    setAiResultUrl("");
-  }
+  async function onPickPerson(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = await fileToDataURL(f);
+    setPersonDataUrl(url);
+    setAiResultUrl("");
+  }
 
-  // =============== DRAG / HANDLE LOGIC ===============
-  function getCursor(e) {
-    const rect = stageRef.current.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top, rect };
-  }
+  // =============== DRAG / HANDLE LOGIC ===============
+  function getCursor(e) {
+    const rect = stageRef.current.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top, rect };
+  }
 
-  function overlayHalfSize() {
-    const iw = hoodieImg?.naturalWidth || 1;
-    const ih = hoodieImg?.naturalHeight || 1;
-    const w = Math.abs(iw * scale); // mirror does not change size
-    const h = ih * scale;
-    return { hw: w / 2, hh: h / 2 };
-  }
+  function overlayHalfSize() {
+    const iw = hoodieImg?.naturalWidth || 1;
+    const ih = hoodieImg?.naturalHeight || 1;
+    const w = Math.abs(iw * scale); // mirror does not change size
+    const h = ih * scale;
+    return { hw: w / 2, hh: h / 2 };
+  }
 
-  function clampToStage(x, y, rect) {
-    const { hw, hh } = overlayHalfSize();
-    const minX = hw;
-    const maxX = rect.width - hw;
-    const minY = hh;
-    const maxY = rect.height - hh;
-    return { x: clamp(x, minX, maxX), y: clamp(y, minY, maxY) };
-  }
+  function clampToStage(x, y, rect) {
+    const { hw, hh } = overlayHalfSize();
+    const minX = hw;
+    const maxX = rect.width - hw;
+    const minY = hh;
+    const maxY = rect.height - hh;
+    return { x: clamp(x, minX, maxX), y: clamp(y, minY, maxY) };
+  }
 
-  function onMouseDownMove(e) {
-    if (!hoodieImg) return;
-    setDragging(true);
-    setDragMode("move");
-    const cur = getCursor(e);
-    dragState.current.startX = cur.x;
-    dragState.current.startY = cur.y;
-    dragState.current.startPos = { ...pos };
-  }
-  function onMouseDownScale(e) {
-    if (!hoodieImg) return;
-    e.stopPropagation();
-    setDragging(true);
-    setDragMode("scale");
-    const cur = getCursor(e);
-    const box = getOverlayBox();
-    dragState.current.center = { x: box.cx, y: box.cy };
-    dragState.current.startScale = scale;
-    dragState.current.startX = cur.x;
-    dragState.current.startY = cur.y;
-  }
-  function onMouseDownRotate(e) {
-    if (!hoodieImg) return;
-    e.stopPropagation();
-    setDragging(true);
-    setDragMode("rotate");
-    const cur = getCursor(e);
-    const box = getOverlayBox();
-    dragState.current.center = { x: box.cx, y: box.cy };
-    dragState.current.startRot = rotation;
-    dragState.current.startX = cur.x;
-    dragState.current.startY = cur.y;
-  }
+  function onMouseDownMove(e) {
+    if (!hoodieImg) return;
+    setDragging(true);
+    setDragMode("move");
+    const cur = getCursor(e);
+    dragState.current.startX = cur.x;
+    dragState.current.startY = cur.y;
+    dragState.current.startPos = { ...pos };
+  }
+  function onMouseDownScale(e) {
+    if (!hoodieImg) return;
+    e.stopPropagation();
+    setDragging(true);
+    setDragMode("scale");
+    const cur = getCursor(e);
+    const box = getOverlayBox();
+    dragState.current.center = { x: box.cx, y: box.cy };
+    dragState.current.startScale = scale;
+    dragState.current.startX = cur.x;
+    dragState.current.startY = cur.y;
+  }
+  function onMouseDownRotate(e) {
+    if (!hoodieImg) return;
+    e.stopPropagation();
+    setDragging(true);
+    setDragMode("rotate");
+    const cur = getCursor(e);
+    const box = getOverlayBox();
+    dragState.current.center = { x: box.cx, y: box.cy };
+    dragState.current.startRot = rotation;
+    dragState.current.startX = cur.x;
+    dragState.current.startY = cur.y;
+  }
 
-  function angleBetween(cx, cy, x, y) { return Math.atan2(y - cy, x - cx); }
-  function distBetween(cx, cy, x, y) { return Math.hypot(x - cx, y - cy); }
+  function angleBetween(cx, cy, x, y) { return Math.atan2(y - cy, x - cx); }
+  function distBetween(cx, cy, x, y) { return Math.hypot(x - cx, y - cy); }
 
-  function onMouseMove(e) {
-    if (!dragging) return;
-    const { x, y, rect } = getCursor(e);
-    if (dragMode === "move") {
-      const dx = x - dragState.current.startX;
-      const dy = y - dragState.current.startY;
-      setPos({
-        x: dragState.current.startPos.x + dx,
-        y: dragState.current.startPos.y + dy,
-      }); // no clamp
-    }
-    if (dragMode === "scale") {
-      const { center, startX, startY, startScale } = dragState.current;
-      const d0 = distBetween(center.x, center.y, startX, startY);
-      const d1 = distBetween(center.x, center.y, x, y);
-      if (d0 > 0) setScale(clamp(startScale * (d1 / d0), 0.2, 4));
-    }
-    if (dragMode === "rotate") {
-      const { center, startX, startY, startRot } = dragState.current;
-      const a0 = angleBetween(center.x, center.y, startX, startY);
-      const a1 = angleBetween(center.x, center.y, x, y);
-      setRotation(startRot + (a1 - a0) * (180 / Math.PI));
-    }
-  }
-  function onMouseUp() { setDragging(false); }
+  function onMouseMove(e) {
+    if (!dragging) return;
+    const { x, y, rect } = getCursor(e);
+    if (dragMode === "move") {
+      const dx = x - dragState.current.startX;
+      const dy = y - dragState.current.startY;
+      setPos({
+        x: dragState.current.startPos.x + dx,
+        y: dragState.current.startPos.y + dy,
+      }); // no clamp
+    }
+    if (dragMode === "scale") {
+      const { center, startX, startY, startScale } = dragState.current;
+      const d0 = distBetween(center.x, center.y, startX, startY);
+      const d1 = distBetween(center.x, center.y, x, y);
+      if (d0 > 0) setScale(clamp(startScale * (d1 / d0), 0.2, 4));
+    }
+    if (dragMode === "rotate") {
+      const { center, startX, startY, startRot } = dragState.current;
+      const a0 = angleBetween(center.x, center.y, startX, startY);
+      const a1 = angleBetween(center.x, center.y, x, y);
+      setRotation(startRot + (a1 - a0) * (180 / Math.PI));
+    }
+  }
+  function onMouseUp() { setDragging(false); }
 
-  function getOverlayBox() {
-    const iw = hoodieImg?.naturalWidth || 1;
-    const ih = hoodieImg?.naturalHeight || 1;
-    const w = Math.abs(iw * scale);
-    const h = ih * scale;
-    return { cx: pos.x, cy: pos.y, w, h };
-  }
+  function getOverlayBox() {
+    const iw = hoodieImg?.naturalWidth || 1;
+    const ih = hoodieImg?.naturalHeight || 1;
+    const w = Math.abs(iw * scale);
+    const h = ih * scale;
+    return { cx: pos.x, cy: pos.y, w, h };
+  }
 
-  function resetOverlay() {
-    const rect = stageRef.current?.getBoundingClientRect();
-    const cx = rect ? rect.width / 2 : 360;
-    const cy = rect ? rect.height / 2 : 360;
-    setPos({ x: cx, y: cy });
-    setScale(0.8);
-    setRotation(0);
-    setMirror(false);
-  }
+  function resetOverlay() {
+    const rect = stageRef.current?.getBoundingClientRect();
+    const cx = rect ? rect.width / 2 : 360;
+    const cy = rect ? rect.height / 2 : 360;
+    setPos({ x: cx, y: cy });
+    setScale(0.8);
+    setRotation(0);
+    setMirror(false);
+  }
 
-  async function exportPNG() {
-    try {
-      if (!personImg) return alert("Please upload a profile image first.");
-      const stage = stageRef.current;
-      const rect = stage.getBoundingClientRect();
-      const outSize = Math.round(Math.max(rect.width, rect.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = outSize;
-      canvas.height = outSize;
-      const ctx = canvas.getContext("2d");
+  async function exportPNG() {
+    try {
+      if (!personImg) return alert("Please upload a profile image first.");
+      const stage = stageRef.current;
+      const rect = stage.getBoundingClientRect();
+      const outSize = Math.round(Math.max(rect.width, rect.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = outSize;
+      canvas.height = outSize;
+      const ctx = canvas.getContext("2d");
 
-      // Person: cover square
-      if (personImg) {
-        const iw = personImg.naturalWidth, ih = personImg.naturalHeight;
-        const scaleCover = Math.max(outSize / iw, outSize / ih);
-        const dw = iw * scaleCover, dh = ih * scaleCover;
-        const dx = (outSize - dw) / 2, dy = (outSize - dh) / 2;
-        ctx.drawImage(personImg, dx, dy, dw, dh);
-      }
+      // Person: cover square
+      if (personImg) {
+        const iw = personImg.naturalWidth, ih = personImg.naturalHeight;
+        const scaleCover = Math.max(outSize / iw, outSize / ih);
+        const dw = iw * scaleCover, dh = ih * scaleCover;
+        const dx = (outSize - dw) / 2, dy = (outSize - dh) / 2;
+        ctx.drawImage(personImg, dx, dy, dw, dh);
+      }
 
-      // CodeGame overlay (cover square)
-      if (useCodeGameOverlay && overlayImg) {
-        const iw = overlayImg.naturalWidth, ih = overlayImg.naturalHeight;
-        const scaleCover = Math.max(outSize / iw, outSize / ih);
-        const dw = iw * scaleCover, dh = ih * scaleCover;
-        const dx = (outSize - dw) / 2, dy = (outSize - dh) / 2;
-        ctx.drawImage(overlayImg, dx, dy, dw, dh);
-      }
+      // CodeGame overlay (cover square)
+      if (useCodeGameOverlay && overlayImg) {
+        const iw = overlayImg.naturalWidth, ih = overlayImg.naturalHeight;
+        const scaleCover = Math.max(outSize / iw, outSize / ih);
+        const dw = iw * scaleCover, dh = ih * scaleCover;
+        const dx = (outSize - dw) / 2, dy = (outSize - dh) / 2;
+        ctx.drawImage(overlayImg, dx, dy, dw, dh);
+      }
 
-      // Hoodie (or hat) overlay
-      if (hoodieImg && selectedHoodieUrl) {
-        const rectDom = stage.getBoundingClientRect();
-        const scaleXY = outSize / rectDom.width; // stage is square
-        const hoodieW = hoodieImg.naturalWidth * scale;
-        const hoodieH = hoodieImg.naturalHeight * scale;
-        ctx.save();
-        ctx.translate(pos.x * scaleXY, pos.y * scaleXY);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.scale(mirror ? -1 : 1, 1);
-        ctx.drawImage(
-          hoodieImg,
-          -((hoodieW * scaleXY) / 2),
-          -((hoodieH * scaleXY) / 2),
-          hoodieW * scaleXY,
-          hoodieH * scaleXY
-        );
-        ctx.restore();
-      }
+      // Hoodie (or hat) overlay
+      if (hoodieImg && selectedHoodieUrl) {
+        const rectDom = stage.getBoundingClientRect();
+        const scaleXY = outSize / rectDom.width; // stage is square
+        const hoodieW = hoodieImg.naturalWidth * scale;
+        const hoodieH = hoodieImg.naturalHeight * scale;
+        ctx.save();
+        ctx.translate(pos.x * scaleXY, pos.y * scaleXY);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.scale(mirror ? -1 : 1, 1);
+        ctx.drawImage(
+          hoodieImg,
+          -((hoodieW * scaleXY) / 2),
+          -((hoodieH * scaleXY) / 2),
+          hoodieW * scaleXY,
+          hoodieH * scaleXY
+        );
+        ctx.restore();
+      }
 
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "tryon.png";
-      a.click();
-    } catch (e) {
-      console.error(e);
-      alert("Error while exporting PNG.");
-    }
-  }
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tryon.png";
+      a.click();
+    } catch (e) {
+      console.error(e);
+      alert("Error while exporting PNG.");
+    }
+  }
 
-  async function aiTryOn() {
-    try {
-      setError("");
-      if (!personDataUrl) { setError("Please upload a profile image."); return; }
-      setAiLoading(true);
+  // GÜNCELLENDİ: Bu fonksiyon Cloudflare Worker ile konuşacak şekilde yeniden yazıldı.
+  async function aiTryOn() {
+    try {
+      setError("");
+      if (!personDataUrl) {
+        setError("Please upload a profile image.");
+        return;
+      }
+      setAiLoading(true);
 
-      // 1) User image -> blob
-      const personBlob = await (await fetch(personDataUrl)).blob();
+      // 1) Kullanıcının yüklediği resmi (data URL) blob'a çevir.
+      const personBlob = await (await fetch(personDataUrl)).blob();
 
-      // 2) Fixed hoodie image (public/hoodies/hoodieai.png)
-      const hoodieResp = await fetch(hoodieAI);
-      if (!hoodieResp.ok) throw new Error("hoodieai.png not found");
-      const hoodieBlob = await hoodieResp.blob();
+      // 2) FormData oluştur ve SADECE kullanıcı resmini ekle.
+      // Worker'daki kod 'image' adında bir alan bekliyor.
+      const formData = new FormData();
+      formData.append('image', personBlob, 'user-image.png');
 
-      // 3) Send to backend (Cloudflare Worker)
-      const form = new FormData();
-      form.append("person", personBlob, "person.jpg");
-      form.append("hoodie", hoodieBlob, "hoodieai.png");
+      // 3) Cloudflare Worker'a isteği gönder.
+      // !!! DEĞİŞTİRİLECEK URL: Buraya kendi Cloudflare Worker'ının URL'sini yazmalısın.
+      const response = await fetch("https://your-worker-name.your-subdomain.workers.dev", {
+        method: "POST",
+        body: formData,
+      });
 
-      const res = await fetch("https://wispy-firefly-fdbd.emrhn-yildiz25.workers.dev/", {
-        method: "POST",
-        body: form
-      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Server error: ${text.slice(0,400)}`);
-      }
+      // 4) Worker'dan dönen JSON'ı işle.
+      // Worker'ımız { image: "data:image/png;base64,..." } formatında bir JSON döner.
+      const result = await response.json();
+      const aiGeneratedImageUrl = result.image;
 
-      // 4) Backend returns a merged PNG buffer
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      if (!aiGeneratedImageUrl) {
+        throw new Error("API'den geçerli bir resim alınamadı.");
+      }
 
-      // Use AI result directly on stage as the main image:
-      setPersonDataUrl(url);
+      // 5) Ana sahnedeki resmi, yapay zekanın ürettiği resimle değiştir.
+      setPersonDataUrl(aiGeneratedImageUrl);
+      
+      // Manuel overlay'i temizle, çünkü AI giydirmesi yapıldı.
+      setSelectedHoodieUrl("");
+      resetOverlay();
 
-      // Optionally reset overlay
-      setSelectedHoodieUrl("");
-      setPos({ x: 360, y: 360 });
-      setScale(0.8);
-      setRotation(0);
-      setMirror(false);
-
-      // We no longer use a separate AI result section
-      setAiResultUrl("");
-
-    } catch (e) {
-      console.error(e);
-      setError("AI try-on başarısız: " + e.message);
-    } finally {
-      setAiLoading(false);
-    }
+    } catch (e) {
+      console.error(e);
+      setError("AI try-on başarısız: " + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
 
+  // ---------- UI ----------
+  return (
+    <div className="w-screen min-h-screen relative bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-neutral-100 flex flex-col items-center p-4 md:p-6 gap-6 overflow-hidden">
+          {/* Arka planda kayan kod efekti */}
+      <CodeRain density={0.9} speed={0.3} fontSize={16} opacity={0.5} />
+      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl z-0" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-600/20 blur-3xl z-0" />
 
-  }
+      <div className="w-full max-w-6xl flex flex-col gap-6 relative z-20">
+        <header className="flex items-center justify-between">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            Code Game Wardrobe <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">(Manual + AI)</span>
+          </h1>
+        </header>
+        
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
+          {/* LEFT: MENU */}
+          <div className="lg:col-span-4 bg-neutral-900/60 rounded-2xl p-4 ring-1 ring-neutral-800 backdrop-blur-sm flex flex-col gap-4">
+            {/* Person upload */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm">Profile Image</label>
+              <input type="file" accept="image/*" onChange={onPickPerson} />
+              {personImg && (<div className="text-xs opacity-70">{personImg.naturalWidth}×{personImg.naturalHeight}</div>)}
+            </div>
+            
+            {/* Code Game overlay toggle */}
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={useCodeGameOverlay} onChange={(e)=>setUseCodeGameOverlay(e.target.checked)} />
+              Code Game Profile Overlay
+            </label>
 
-  // ---------- UI ----------
-  return (
-    <div className="w-screen min-h-screen relative bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-neutral-100 flex flex-col items-center p-4 md:p-6 gap-6 overflow-hidden">
-          {/* Arka planda kayan kod efekti */}
-      <CodeRain density={0.9} speed={0.3} fontSize={16} opacity={0.5} />
-      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl z-0" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-600/20 blur-3xl z-0" />
+            {/* Hoodie picker with toggle */}
+            <div className="flex flex-col gap-2">
+              <div className="text-sm font-semibold">Select Overlay</div>
+              <div className="grid grid-cols-3 gap-2">
+                {HOODIES.map(h => {
+                  const active = selectedHoodieUrl === h.src;
+                  return (
+                    <button
+                      key={h.id}
+                      onClick={() => { setSelectedHoodieUrl(active ? "" : h.src); setAiResultUrl(""); }}
+                      className={`group relative rounded-xl overflow-hidden ring-1 ${active?"ring-indigo-400":"ring-neutral-800"}`}
+                      title={h.label}
+                    >
+                      <img src={h.src} alt={h.label} className="w-full h-24 object-contain bg-neutral-800/60" />
+                      <div className="absolute bottom-1 left-1 right-1 text-[11px] bg-black/40 px-2 py-0.5 rounded-md">{h.label}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+                
+            {/* Sliders */}
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col">
+                <label className="text-xs opacity-70">Scale</label>
+                <input type="range" min={0.2} max={3} step={0.01} value={scale} onChange={(e)=>setScale(parseFloat(e.target.value))} />
+                <div className="text-xs">{scale.toFixed(2)}×</div>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs opacity-70">Rotate</label>
+                <input type="range" min={-180} max={180} step={1} value={rotation} onChange={(e)=>setRotation(parseFloat(e.target.value))} />
+                <div className="text-xs">{Math.round(rotation)}°</div>
+              </div>
+            </div>
 
-      <div className="w-full max-w-6xl flex flex-col gap-6 relative z-20">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-            Code Game Wardrobe <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">(Manual + AI)</span>
-          </h1>
-        </header>
-        
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
-          {/* LEFT: MENU */}
-          <div className="lg:col-span-4 bg-neutral-900/60 rounded-2xl p-4 ring-1 ring-neutral-800 backdrop-blur-sm flex flex-col gap-4">
-            {/* Person upload */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm">Profile Image</label>
-              <input type="file" accept="image/*" onChange={onPickPerson} />
-              {personImg && (<div className="text-xs opacity-70">{personImg.naturalWidth}×{personImg.naturalHeight}</div>)}
-            </div>
-            
-            {/* Code Game overlay toggle */}
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={useCodeGameOverlay} onChange={(e)=>setUseCodeGameOverlay(e.target.checked)} />
-              Code Game Profile Overlay
-            </label>
+            {/* Mirror + Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button className={`px-3 py-2 rounded-xl ring-1 ${mirror?"bg-indigo-600/30 ring-indigo-500":"bg-neutral-800 hover:bg-neutral-700 ring-neutral-700"}`} onClick={()=>setMirror(m=>!m)}>Mirror</button>
+              <button className="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 ring-1 ring-neutral-700" onClick={resetOverlay}>Reset</button>
+              <button className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-lg" onClick={exportPNG}>Download PNG</button>
+            </div>
 
-            {/* Hoodie picker with toggle */}
-            <div className="flex flex-col gap-2">
-              <div className="text-sm font-semibold">Select Overlay</div>
-              <div className="grid grid-cols-3 gap-2">
-                {HOODIES.map(h => {
-                  const active = selectedHoodieUrl === h.src;
-                  return (
-                    <button
-                      key={h.id}
-                      onClick={() => { setSelectedHoodieUrl(active ? "" : h.src); setAiResultUrl(""); }}
-                      className={`group relative rounded-xl overflow-hidden ring-1 ${active?"ring-indigo-400":"ring-neutral-800"}`}
-                      title={h.label}
-                    >
-                      <img src={h.src} alt={h.label} className="w-full h-24 object-contain bg-neutral-800/60" />
-                      <div className="absolute bottom-1 left-1 right-1 text-[11px] bg-black/40 px-2 py-0.5 rounded-md">{h.label}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-                
-            {/* Sliders */}
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col">
-                <label className="text-xs opacity-70">Scale</label>
-                <input type="range" min={0.2} max={3} step={0.01} value={scale} onChange={(e)=>setScale(parseFloat(e.target.value))} />
-                <div className="text-xs">{scale.toFixed(2)}×</div>
-              </div>
-              <div className="flex flex-col">
-                <label className="text-xs opacity-70">Rotate</label>
-                <input type="range" min={-180} max={180} step={1} value={rotation} onChange={(e)=>setRotation(parseFloat(e.target.value))} />
-                <div className="text-xs">{Math.round(rotation)}°</div>
-              </div>
-            </div>
+            {/* AI Try-on (inside same panel) */}
+            <div className="flex gap-2 items-center">
+              <button className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 disabled:opacity-50 shadow-lg" onClick={aiTryOn} disabled={aiLoading || !personDataUrl}>
+                {aiLoading ? "Running AI…" : "AI Hoodie Try-On"}
+              </button>
+              {aiResultUrl && (
+                <a href={aiResultUrl} download className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-lg">Download</a>
+              )}
+            </div>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+          </div>
 
-            {/* Mirror + Buttons */}
-            <div className="flex flex-wrap gap-2">
-              <button className={`px-3 py-2 rounded-xl ring-1 ${mirror?"bg-indigo-600/30 ring-indigo-500":"bg-neutral-800 hover:bg-neutral-700 ring-neutral-700"}`} onClick={()=>setMirror(m=>!m)}>Mirror</button>
-              <button className="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 ring-1 ring-neutral-700" onClick={resetOverlay}>Reset</button>
-              <button className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-lg" onClick={exportPNG}>Download PNG</button>
-            </div>
+          {/* RIGHT: SQUARE STAGE (1:1) */}
+          <div className="lg:col-span-8">
+            <section className="bg-neutral-900/60 rounded-2xl p-4 md:p-5 flex flex-col gap-4 ring-1 ring-neutral-800 backdrop-blur-sm">
+              <div className="text-lg font-semibold">Manual Try-On</div>
+              <div
+                ref={stageRef}
+                className="relative w-full max-w-[720px] mx-auto aspect-square bg-neutral-800/70 rounded-2xl overflow-hidden select-none ring-1 ring-neutral-700 shadow-2xl"
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onMouseLeave={onMouseUp}
+              >
+                {/* Person clipped in 1:1 square */}
+                {personImg ? (
+                  <img src={personDataUrl} alt="person" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                ) : (
+                  <div className="absolute inset-0 grid place-items-center text-neutral-400">Upload a profile image</div>
+                )}
 
-            {/* AI Try-on (inside same panel) */}
-            <div className="flex gap-2 items-center">
-              <button className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 disabled:opacity-50 shadow-lg" onClick={aiTryOn} disabled={aiLoading || !personDataUrl}>
-                {aiLoading ? "Running AI…" : "AI Hoodie Try-On"}
-              </button>
-              {aiResultUrl && (
-                <a href={aiResultUrl} download className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-lg">Download</a>
-              )}
-            </div>
-            {error && <div className="text-red-400 text-sm">{error}</div>}
-          </div>
+                {/* Code Game overlay (cover) */}
+                {useCodeGameOverlay && overlayImg && (
+                  <img src={CODEGAME_OVERLAY_SRC} alt="overlay" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+                )}
 
-          {/* RIGHT: SQUARE STAGE (1:1) */}
-          <div className="lg:col-span-8">
-            <section className="bg-neutral-900/60 rounded-2xl p-4 md:p-5 flex flex-col gap-4 ring-1 ring-neutral-800 backdrop-blur-sm">
-              <div className="text-lg font-semibold">Manual Try-On</div>
-              <div
-                ref={stageRef}
-                className="relative w-full max-w-[720px] mx-auto aspect-square bg-neutral-800/70 rounded-2xl overflow-hidden select-none ring-1 ring-neutral-700 shadow-2xl"
-                onMouseMove={onMouseMove}
-                onMouseUp={onMouseUp}
-                onMouseLeave={onMouseUp}
-              >
-                {/* Person clipped in 1:1 square */}
-                {personImg ? (
-                  <img src={personDataUrl} alt="person" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-                ) : (
-                  <div className="absolute inset-0 grid place-items-center text-neutral-400">Upload a profile image</div>
-                )}
+                {/* Hoodie (or hat) overlay */}
+                {hoodieImg && personImg && selectedHoodieUrl && (
+                  <div
+                    className="absolute top-0 left-0 cursor-move"
+                    style={{
+                      transform: `translate(${pos.x}px, ${pos.y}px) translate(-50%,-50%) rotate(${rotation}deg) scaleX(${mirror ? -scale : scale}) scaleY(${scale})`,
+                      transformOrigin: "center center",
+                    }}
+                    onMouseDown={onMouseDownMove}
+                  >
+                    <img src={selectedHoodieUrl} alt="overlay-asset" className="max-w-[60vw] pointer-events-none" />
 
-                {/* Code Game overlay (cover) */}
-                {useCodeGameOverlay && overlayImg && (
-                  <img src={CODEGAME_OVERLAY_SRC} alt="overlay" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-                )}
+                    {/* handles */}
+                    {(() => {
+                      const size = 12;
+                      const Handle = ({ style, onMouseDown, title }) => (
+                        <div onMouseDown={onMouseDown} title={title} className="absolute bg-white/95 text-black grid place-items-center rounded-full shadow-md cursor-pointer" style={{ width: size, height: size, ...style }} />
+                      );
+                      return (
+                        <>
+                          <Handle title="Scale" style={{ right: -size/2, bottom: -size/2 }} onMouseDown={onMouseDownScale} />
+                          <Handle title="Rotate" style={{ right: -size/2, top: -size/2 }} onMouseDown={onMouseDownRotate} />
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </section>
 
-                {/* Hoodie (or hat) overlay */}
-                {hoodieImg && personImg && selectedHoodieUrl && (
-                  <div
-                    className="absolute top-0 left-0 cursor-move"
-                    style={{
-                      transform: `translate(${pos.x}px, ${pos.y}px) translate(-50%,-50%) rotate(${rotation}deg) scaleX(${mirror ? -scale : scale}) scaleY(${scale})`,
-                      transformOrigin: "center center",
-                    }}
-                    onMouseDown={onMouseDownMove}
-                  >
-                    <img src={selectedHoodieUrl} alt="overlay-asset" className="max-w-[60vw] pointer-events-none" />
+        {/* (AI result section removed — AI result now replaces the main stage image) */}
 
-                    {/* handles */}
-                    {(() => {
-                      const size = 12;
-                      const Handle = ({ style, onMouseDown, title }) => (
-                        <div onMouseDown={onMouseDown} title={title} className="absolute bg-white/95 text-black grid place-items-center rounded-full shadow-md cursor-pointer" style={{ width: size, height: size, ...style }} />
-                      );
-                      return (
-                        <>
-                          <Handle title="Scale" style={{ right: -size/2, bottom: -size/2 }} onMouseDown={onMouseDownScale} />
-                          <Handle title="Rotate" style={{ right: -size/2, top: -size/2 }} onMouseDown={onMouseDownRotate} />
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-        </section>
+        <footer className="text-lg opacity-60 text-center pb-6">
+          Tip: The profile area is fixed to a 1:1 square. — Made by{" "}
+          <a
+            href="https://x.com/emirhanfalan"
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-dotted hover:opacity-80"
+            title="Follow Emirhan on X"
+          >
+            Emirhan
+          </a>
+        </footer>
+      </div>
 
-        {/* (AI result section removed — AI result now replaces the main stage image) */}
-
-        <footer className="text-lg opacity-60 text-center pb-6">
-          Tip: The profile area is fixed to a 1:1 square. — Made by{" "}
-          <a
-            href="https://x.com/emirhanfalan"
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-dotted hover:opacity-80"
-            title="Follow Emirhan on X"
-          >
-            Emirhan
-          </a>
-        </footer>
-      </div>
-
-      {dragging && (<div className="fixed bottom-3 right-3 text-xs bg-neutral-800/80 px-2 py-1 rounded-lg">Dragging…</div>)}
-    </div>
-  );
+      {dragging && (<div className="fixed bottom-3 right-3 text-xs bg-neutral-800/80 px-2 py-1 rounded-lg">Dragging…</div>)}
+    </div>
+  );
 }
