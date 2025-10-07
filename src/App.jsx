@@ -288,12 +288,23 @@ export default function App() {
       setAiResultUrl("");
 
     } catch (e) {
-      console.error(e); // developer console'da detay kalsın
-      setError("AI service is temporarily unavailable. Please try again later.");
-      setTimeout(() => setError(""), 4000); // 4 saniye sonra otomatik kaybolsun
+      console.error("AI hata detayı:", e);
+
+      // Eğer response objesi varsa içeriğini al
+      if (e instanceof Response) {
+        const text = await e.text();
+        console.error("AI response body:", text);
+        setError(`AI error: ${text}`);
+      } else {
+        setError(`AI error: ${e.message || e.toString()}`);
+      }
+
+      // 4 saniye sonra otomatik kaybolsun
+      setTimeout(() => setError(""), 4000);
     } finally {
       setAiLoading(false);
     }
+
 
   }
 
