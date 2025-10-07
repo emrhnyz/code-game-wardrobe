@@ -288,22 +288,12 @@ export default function App() {
       setAiResultUrl("");
 
     } catch (e) {
-      console.error("AI hata detayı:", e);
-
-      // Eğer response objesi varsa içeriğini al
-      if (e instanceof Response) {
-        const text = await e.text();
-        console.error("AI response body:", text);
-        setError(`AI error: ${text}`);
-      } else {
-        setError(`AI error: ${e.message || e.toString()}`);
-      }
-
-      // 4 saniye sonra otomatik kaybolsun
-      setTimeout(() => setError(""), 4000);
+      console.error(e);
+      setError("AI try-on başarısız: " + e.message);
     } finally {
       setAiLoading(false);
     }
+
 
 
   }
