@@ -14,9 +14,9 @@ import codeGameOverlay from "./assets/hoodies/foto.png";
 // Drag clamp: (current version allows free move; clamp function is available if needed)
 
 const HOODIES = [
-  { id: "hoodie1", label: "Hoodie #1", src: hoodie1 },
-  { id: "hoodie2", label: "Hoodie #2", src: hoodie2 },
-  { id: "hoodie3", label: "Hoodie #3", src: hoodie3 },
+  { id: "hoodie1", label: "Hat #1", src: hoodie1 },
+  { id: "hoodie2", label: "Hat #2", src: hoodie2 },
+  { id: "hoodie3", label: "Hat #3", src: hoodie3 },
 ];
 const CODEGAME_OVERLAY_SRC = codeGameOverlay;
 
