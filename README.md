@@ -1,16 +1,37 @@
-# React + Vite
+# 🧥 Code Game Wardrobe
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Code Game Wardrobe** was originally a small, fan-made web app built to let people try digital hats and hoodies in the Code Game universe — created purely for fun, creativity, and community engagement.
 
-Currently, two official plugins are available:
+Unfortunately, the official *Code Game* project itself was run in a way that prioritized short-term gain over its users and left many community members with losses.  
+After the project shut down and the team avoided accountability, I decided to **permanently disable this site as a service to that project**.  
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This app will remain online **only as an archived, fan-made experiment** — a reminder that community-driven creativity should never be exploited.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ⚠️ Notice
 
-## Expanding the ESLint configuration
+- **AI generation is permanently disabled.**  
+- **All Code Game–branded assets were removed or replaced.**  
+- This project **has no connection to the official Code Game team**.  
+- The site remains available for transparency and educational purposes only.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🧠 About the App
+
+Built with:
+- **React + Vite**
+- **TailwindCSS**
+- **Custom image manipulation logic** (scale / rotate / mirror)
+- **Canvas export to PNG**
+
+All code was written to explore web-based creative tools — you can still run it locally and study the logic behind overlays, transforms, and manual compositing.
+
+---
+
+## 💻 Local Development
+
+```bash
+npm install
+npm run dev
