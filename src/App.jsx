@@ -6,21 +6,24 @@ import hoodie3 from "./assets/hoodies/hoodie3.png";
 import hoodieAI from "./assets/hoodies/hoodieai.png";
 import codeGameOverlay from "./assets/hoodies/foto.png";
 
-// --- SINGLE FILE REACT APP (Manual + AI) ---
-// Stage is a strict 1:1 square (PP area). Person image is clipped inside it (no overflow).
-// Left menu: scale/rotation sliders + Mirror toggle.
-// Hoodie selection toggle (click again to deselect).
-// "Code Game Profile Overlay" checkbox: overlays /hoodies/foto.png over the stage, fitted fully.
-// Drag clamp: (current version allows free move; clamp function is available if needed)
 // === CONFIG ===
 const DISABLE_AI = true;  // AI tuşu kilit
 const ALERT_COPY = {
-  title: "Uyarı Başlığı (sen belirleyeceksin)",
-  body:  "Buraya uyarı metni gelecek. İstediğin zaman düzenle.",
-  button: "Tamam, anladım" // buton yazısı
+  title: "Sadly, This Chapter Ends Here",
+  body:
+    "Over the past days, I learned first-hand that the “Code Game” project — for which I had built this independent, fan-made site to support its community — was run in a way that prioritized short-term gain over its users.\n\n" +
+    "The project failed to remain operational even for a meaningful span of time, leaving people with losses. When community feedback surfaced, the team removed channels on Discord and ultimately locked the remaining room to avoid accountability.\n\n" +
+    "I refuse to be complicit in that behavior. Effective immediately, I am shutting this site down permanently as a service to that project and disabling all AI features. Any “Code Game” hats/overlays have been replaced to avoid further association.\n\n" +
+    "This site was built to enable creativity—not to prop up initiatives that disregard their own community. I’m grateful to everyone who tried this tool in good faith. Your trust matters more than traffic or hype.\n\n" +
+    "What’s changing now:\n" +
+    "- AI is disabled across the product.\n" +
+    "- Code Game assets are removed or replaced.\n" +
+    "- The site will remain suspended and no longer serve that project.\n\n" +
+    "While I cannot recover anyone’s funds, I can choose not to lend them credibility. That’s what I’m doing today.\n\n" +
+    "Thank you for understanding.",
+  button: "Close"
 };
-// App component içinde (diğer useState'lerin yanında)
-const [showAlert, setShowAlert] = useState(true); // site açılır açılmaz uyarı açık gelsin
+
 
 const HOODIES = [
   { id: "hoodie1", label: "Hat #1", src: hoodie1 },
@@ -50,7 +53,6 @@ async function convertIfNeeded(file, target = "image/png") {
   return new File([blob], (file.name || "image") + (target === "image/png" ? ".png" : ".jpg"), { type: target });
 }
 
-
 function fileToDataURL(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -74,6 +76,9 @@ function useImage(src) {
 }
 
 export default function App() {
+  // Açılış uyarısı (modal) için state
+  const [showAlert, setShowAlert] = useState(true);
+
   const [personDataUrl, setPersonDataUrl] = useState("");
   const [selectedHoodieUrl, setSelectedHoodieUrl] = useState(HOODIES[0]?.src || "");
   const [useCodeGameOverlay, setUseCodeGameOverlay] = useState(false);
@@ -110,7 +115,6 @@ export default function App() {
     setPersonDataUrl(url);
     setAiResultUrl("");
   }
-
 
   // =============== DRAG / HANDLE LOGIC ===============
   function getCursor(e) {
@@ -174,7 +178,7 @@ export default function App() {
 
   function onMouseMove(e) {
     if (!dragging) return;
-    const { x, y, rect } = getCursor(e);
+    const { x, y } = getCursor(e);
     if (dragMode === "move") {
       const dx = x - dragState.current.startX;
       const dy = y - dragState.current.startY;
@@ -277,11 +281,13 @@ export default function App() {
   }
 
   async function aiTryOn() {
-      if (DISABLE_AI) {
-    setError("AI özelliği şu an devre dışı.");
-    setTimeout(() => setError(""), 4000);
-    return;
-  }
+    // AI devre dışı ise erken çık
+    if (DISABLE_AI) {
+      setError("AI özelliği şu an devre dışı.");
+      setTimeout(() => setError(""), 4000);
+      return;
+    }
+
     try {
       setError("");
       if (!personDataUrl) { setError("Please upload a profile image."); return; }
@@ -334,44 +340,41 @@ export default function App() {
     } finally {
       setAiLoading(false);
     }
-
   }
 
   // ---------- UI ----------
   return (
-    
-    
     <div className="w-screen min-h-screen relative bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-neutral-100 flex flex-col items-center p-4 md:p-6 gap-6 overflow-hidden">
-          {/* OPENING ALERT MODAL */}
-{showAlert && (
-  <div
-    role="dialog"
-    aria-modal="true"
-    className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
-  >
-    <div className="w-full max-w-md rounded-2xl bg-neutral-900 ring-1 ring-neutral-800 shadow-2xl">
-      <div className="p-5 border-b border-neutral-800">
-        <h2 className="text-xl font-bold">{ALERT_COPY.title}</h2>
-      </div>
+      {/* OPENING ALERT MODAL */}
+      {showAlert && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+        > 
+          <div className="w-full max-w-md rounded-2xl bg-neutral-900 ring-1 ring-neutral-800 shadow-2xl">
+            <div className="p-5 border-b border-neutral-800">
+              <h2 className="text-xl font-bold">{ALERT_COPY.title}</h2>
+            </div>
 
-      <div className="p-5 text-sm leading-relaxed text-neutral-200">
-        {ALERT_COPY.body}
-      </div>
+            <div className="p-5 text-sm leading-relaxed text-neutral-200 whitespace-pre-line">
+              {ALERT_COPY.body}
+            </div>
 
-      <div className="p-4 flex justify-end gap-2 border-t border-neutral-800">
-        <button
-          onClick={() => setShowAlert(false)}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 shadow"
-          autoFocus
-        >
-          {ALERT_COPY.button}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="p-4 flex justify-end gap-2 border-t border-neutral-800">
+              <button
+                onClick={() => setShowAlert(false)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 shadow"
+                autoFocus
+              >
+                {ALERT_COPY.button}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-          {/* Arka planda kayan kod efekti */}
+      {/* Arka planda kayan kod efekti */}
       <CodeRain density={0.9} speed={0.3} fontSize={16} opacity={0.5} />
       <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl z-0" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-600/20 blur-3xl z-0" />
@@ -382,7 +385,7 @@ export default function App() {
             Code Game Wardrobe <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">(Manual + AI)</span>
           </h1>
         </header>
-        
+
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 w-full">
           {/* LEFT: MENU */}
           <div className="lg:col-span-4 bg-neutral-900/60 rounded-2xl p-4 ring-1 ring-neutral-800 backdrop-blur-sm flex flex-col gap-4">
@@ -392,7 +395,7 @@ export default function App() {
               <input type="file" accept="image/*" onChange={onPickPerson} />
               {personImg && (<div className="text-xs opacity-70">{personImg.naturalWidth}×{personImg.naturalHeight}</div>)}
             </div>
-            
+
             {/* Code Game overlay toggle */}
             <label className="inline-flex items-center gap-2 text-sm">
               <input type="checkbox" checked={useCodeGameOverlay} onChange={(e)=>setUseCodeGameOverlay(e.target.checked)} />
@@ -419,7 +422,7 @@ export default function App() {
                 })}
               </div>
             </div>
-                
+
             {/* Sliders */}
             <div className="flex flex-col gap-3">
               <div className="flex flex-col">
@@ -449,7 +452,7 @@ export default function App() {
                 disabled={aiLoading || !personDataUrl || DISABLE_AI}
                 title={DISABLE_AI ? "AI özelliği şu an devre dışı" : ""}
               >
-                {DISABLE_AI ? "AI Kapalı" : (aiLoading ? "Running AI…" : "AI Hoodie Try-On")}
+                {DISABLE_AI ? "AI Closed" : (aiLoading ? "Running AI…" : "AI Hoodie Try-On")}
               </button>
             </div>
             {error && <div className="text-red-400 text-sm">{error}</div>}
@@ -494,7 +497,12 @@ export default function App() {
                     {(() => {
                       const size = 12;
                       const Handle = ({ style, onMouseDown, title }) => (
-                        <div onMouseDown={onMouseDown} title={title} className="absolute bg-white/95 text-black grid place-items-center rounded-full shadow-md cursor-pointer" style={{ width: size, height: size, ...style }} />
+                        <div
+                          onMouseDown={onMouseDown}
+                          title={title}
+                          className="absolute bg-white/95 text-black grid place-items-center rounded-full shadow-md cursor-pointer"
+                          style={{ width: size, height: size, ...style }}
+                        />
                       );
                       return (
                         <>
