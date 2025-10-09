@@ -12,6 +12,15 @@ import codeGameOverlay from "./assets/hoodies/foto.png";
 // Hoodie selection toggle (click again to deselect).
 // "Code Game Profile Overlay" checkbox: overlays /hoodies/foto.png over the stage, fitted fully.
 // Drag clamp: (current version allows free move; clamp function is available if needed)
+// === CONFIG ===
+const DISABLE_AI = true;  // AI tuşu kilit
+const ALERT_COPY = {
+  title: "Uyarı Başlığı (sen belirleyeceksin)",
+  body:  "Buraya uyarı metni gelecek. İstediğin zaman düzenle.",
+  button: "Tamam, anladım" // buton yazısı
+};
+// App component içinde (diğer useState'lerin yanında)
+const [showAlert, setShowAlert] = useState(true); // site açılır açılmaz uyarı açık gelsin
 
 const HOODIES = [
   { id: "hoodie1", label: "Hat #1", src: hoodie1 },
@@ -268,6 +277,11 @@ export default function App() {
   }
 
   async function aiTryOn() {
+      if (DISABLE_AI) {
+    setError("AI özelliği şu an devre dışı.");
+    setTimeout(() => setError(""), 4000);
+    return;
+  }
     try {
       setError("");
       if (!personDataUrl) { setError("Please upload a profile image."); return; }
@@ -325,7 +339,38 @@ export default function App() {
 
   // ---------- UI ----------
   return (
+    
+    
     <div className="w-screen min-h-screen relative bg-gradient-to-br from-neutral-950 via-neutral-900 to-black text-neutral-100 flex flex-col items-center p-4 md:p-6 gap-6 overflow-hidden">
+          {/* OPENING ALERT MODAL */}
+{showAlert && (
+  <div
+    role="dialog"
+    aria-modal="true"
+    className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+  >
+    <div className="w-full max-w-md rounded-2xl bg-neutral-900 ring-1 ring-neutral-800 shadow-2xl">
+      <div className="p-5 border-b border-neutral-800">
+        <h2 className="text-xl font-bold">{ALERT_COPY.title}</h2>
+      </div>
+
+      <div className="p-5 text-sm leading-relaxed text-neutral-200">
+        {ALERT_COPY.body}
+      </div>
+
+      <div className="p-4 flex justify-end gap-2 border-t border-neutral-800">
+        <button
+          onClick={() => setShowAlert(false)}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 shadow"
+          autoFocus
+        >
+          {ALERT_COPY.button}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
           {/* Arka planda kayan kod efekti */}
       <CodeRain density={0.9} speed={0.3} fontSize={16} opacity={0.5} />
       <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl z-0" />
@@ -398,12 +443,14 @@ export default function App() {
 
             {/* AI Try-on (inside same panel) */}
             <div className="flex gap-2 items-center">
-              <button className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 disabled:opacity-50 shadow-lg" onClick={aiTryOn} disabled={aiLoading || !personDataUrl}>
-                {aiLoading ? "Running AI…" : "AI Hoodie Try-On"}
+              <button
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:opacity-90 disabled:opacity-50 shadow-lg"
+                onClick={aiTryOn}
+                disabled={aiLoading || !personDataUrl || DISABLE_AI}
+                title={DISABLE_AI ? "AI özelliği şu an devre dışı" : ""}
+              >
+                {DISABLE_AI ? "AI Kapalı" : (aiLoading ? "Running AI…" : "AI Hoodie Try-On")}
               </button>
-              {aiResultUrl && (
-                <a href={aiResultUrl} download className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-lg">Download</a>
-              )}
             </div>
             {error && <div className="text-red-400 text-sm">{error}</div>}
           </div>
